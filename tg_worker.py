@@ -8,7 +8,7 @@ logger = logging.getLogger("telegram")
 
 API_ID   = 2040
 API_HASH = "b18441a1ff607e10a989891a5462e627"
-SESSION  = "/opt/social-monitor/tg_session"
+SESSION  = "/opt/social-cli/tg_session"
 CST      = timezone(timedelta(hours=8))
 
 _client: TelegramClient = None

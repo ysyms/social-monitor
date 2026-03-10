@@ -29,9 +29,10 @@ CONFIG_TEMPLATE = {
 async def setup_telegram(client, tg_session_src=None):
     """Telegram 登录：已有 session 直接用，否则交互登录"""
     if tg_session_src and os.path.exists(tg_session_src):
-        # 导入外部 session 文件
-        import shutil
-        shutil.copy(tg_session_src, tg_worker.SESSION + ".session")
+        target = tg_worker.SESSION + ".session"
+        if os.path.abspath(tg_session_src) != os.path.abspath(target):
+            import shutil
+            shutil.copy(tg_session_src, target)
         print(f"  ✓ 已导入 Telegram session：{tg_session_src}")
 
     if await client.is_user_authorized():
