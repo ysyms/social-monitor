@@ -29,19 +29,19 @@ async def get_dialogs():
             result["groups"].append(item)
     return result
 
-async def get_recent(hours: float):
-    from telethon.tl.types import PeerChannel, PeerChat, PeerUser
+async def get_recent(hours: float) -> str:
     cutoff = datetime.now(tz=timezone.utc).timestamp() - hours * 3600
     dialogs = await _client.get_dialogs()
-    result = {}
+    lines = []
     for d in dialogs:
         msgs = []
         async for msg in _client.iter_messages(d.entity, limit=100):
             if msg.date.timestamp() < cutoff: break
             if not msg.text: continue
-            sender = getattr(msg.sender, "first_name", None) or getattr(msg.sender, "title", "Unknown") if msg.sender else "Unknown"
-            dt = msg.date.astimezone(CST).strftime("UTC+8 %m/%d %H:%M")
-            msgs.append([sender, dt, msg.text])
+            sender = (getattr(msg.sender, "first_name", None) or getattr(msg.sender, "title", "Unknown")) if msg.sender else "Unknown"
+            t = msg.date.astimezone(CST).strftime("%H:%M")
+            msgs.append(f"  {t} {sender}: {msg.text}")
         if msgs:
-            result[d.name] = msgs
-    return result
+            lines.append(f"[TG] {d.name}")
+            lines.extend(msgs)
+    return "\n".join(lines)

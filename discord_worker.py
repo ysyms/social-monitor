@@ -53,7 +53,7 @@ def _insert(rows):
     with sqlite3.connect(DB_PATH) as c:
         c.executemany("INSERT OR IGNORE INTO messages VALUES (?,?,?,?,?,?,?,?)", rows)
 
-def query(hours: float):
+def query(hours: float) -> str:
     since = time.time() - hours * 3600
     with sqlite3.connect(DB_PATH) as c:
         rows = c.execute(
@@ -61,9 +61,14 @@ def query(hours: float):
             (since,)).fetchall()
     tree = defaultdict(lambda: defaultdict(list))
     for g,ch,a,txt,ts in rows:
-        dt = datetime.fromtimestamp(ts, tz=CST).strftime("UTC+8 %m/%d %H:%M")
-        tree[g][ch].append([a, dt, txt])
-    return {g: dict(chs) for g, chs in tree.items()}
+        t = datetime.fromtimestamp(ts, tz=CST).strftime("%H:%M")
+        tree[g][ch].append(f"  {t} {a}: {txt}")
+    lines = []
+    for g, chs in tree.items():
+        for ch, msgs in chs.items():
+            lines.append(f"[DC] {g} / {ch}")
+            lines.extend(msgs)
+    return "\n".join(lines)
 
 def _get_last(cid):
     with sqlite3.connect(DB_PATH) as c:

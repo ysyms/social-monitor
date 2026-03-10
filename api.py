@@ -28,7 +28,8 @@ def discord_messages(req: HoursReq, x_password: str = Header(None)):
     _auth(x_password)
     if discord_worker.state["expired"]:
         return {"status": "token_expired"}
-    return {"status": "ok", "data": discord_worker.query(req.hours)}
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(discord_worker.query(req.hours))
 
 # ── Telegram ──────────────────────────────────────────────────
 
@@ -40,8 +41,19 @@ async def tg_dialogs(x_password: str = Header(None)):
 @app.post("/telegram/recent")
 async def tg_recent(req: HoursReq, x_password: str = Header(None)):
     _auth(x_password)
-    data = await tg_worker.get_recent(req.hours)
-    return {"status": "ok", "count": sum(len(v) for v in data.values()), "data": data}
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(await tg_worker.get_recent(req.hours))
+
+@app.post("/all")
+async def all_recent(req: HoursReq, x_password: str = Header(None)):
+    _auth(x_password)
+    from fastapi.responses import PlainTextResponse
+    parts = []
+    dc = discord_worker.query(req.hours)
+    tg = await tg_worker.get_recent(req.hours)
+    if dc: parts.append(dc)
+    if tg: parts.append(tg)
+    return PlainTextResponse("\n".join(parts))
 
 # ── Health ────────────────────────────────────────────────────
 
