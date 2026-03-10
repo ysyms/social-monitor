@@ -5,7 +5,7 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from typing import Optional
-import discord_worker, tg_worker, db
+import discord_worker, tg_worker, db, config
 
 logger = logging.getLogger("api")
 PASSWORD = "1314@YSYms"
@@ -83,6 +83,29 @@ def all_recent(req: QueryReq, x_password: str = Header(None)):
     _auth(x_password)
     s, e = _parse_range(req.hours, req.start, req.end)
     return PlainTextResponse(_to_text(db.query(s, e)))
+
+# ── Export (historical fetch, not from DB) ────────────────────
+
+class ExportReq(BaseModel):
+    start: str             # "2026-03-01 00:00"
+    end: str               # "2026-03-10 00:00"
+    platform: Optional[str] = None  # "tg" | "dc" | None (both)
+
+@app.post("/export")
+async def export(req: ExportReq, x_password: str = Header(None)):
+    _auth(x_password)
+    import exporter
+    from datetime import datetime
+    fmt = "%Y-%m-%d %H:%M"
+    s = datetime.strptime(req.start, fmt).replace(tzinfo=CST).timestamp()
+    e = datetime.strptime(req.end,   fmt).replace(tzinfo=CST).timestamp()
+    rows = []
+    if req.platform in (None, "tg"):
+        rows += await exporter.tg_export(s, e)
+    if req.platform in (None, "dc"):
+        cfg = config.load()
+        rows += exporter.dc_export(cfg["discord_token"], s, e)
+    return PlainTextResponse(exporter.to_text(rows))
 
 # ── Health ────────────────────────────────────────────────────
 
