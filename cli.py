@@ -56,6 +56,7 @@ async def main():
     parser.add_argument("--config", metavar="FILE", help="导入 JSON 配置文件")
     parser.add_argument("--tg-session", metavar="FILE", help="导入已有 Telegram session 文件")
     parser.add_argument("--print-template", action="store_true", help="打印配置文件模板")
+    parser.add_argument("--no-interactive", action="store_true", help="非交互模式（配合 --config 使用）")
     args = parser.parse_args()
 
     # 打印模板
@@ -80,10 +81,10 @@ async def main():
     print("【Discord】")
     if cfg.get("discord_token"):
         print(f"  已有 token（末尾：...{cfg['discord_token'][-8:]}）")
-        if input("  重新输入？(y/N) ").strip().lower() == "y":
+        if not args.no_interactive and input("  重新输入？(y/N) ").strip().lower() == "y":
             cfg["discord_token"] = input("  Discord token：").strip()
-    else:
-        print("  获取：浏览器打开 Discord → F12 → Console → localStorage.token")
+    elif not args.no_interactive:
+        print("  获取：浏览器打开 Discord → F12 → Network → Authorization header")
         cfg["discord_token"] = input("  Discord token：").strip()
 
     # ── Telegram ──────────────────────────────────────────────
